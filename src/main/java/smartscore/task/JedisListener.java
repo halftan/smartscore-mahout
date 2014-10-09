@@ -12,8 +12,8 @@ public class JedisListener extends JedisPubSub {
 			return;
 		}
 		
-		TaskItem td = new TaskItem(message);
-		TaskPool.getInstance().notify();
+		TaskItem th = new TaskItem(message);
+		TaskPool.getInstance().put(th);
 	}
 
 	@Override

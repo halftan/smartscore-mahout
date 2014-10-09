@@ -21,6 +21,11 @@ public class TaskItem implements Runnable {
 			break;
 		case "kmeans":
 			System.out.println("Running kmeans example case.");
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 			break;
 		default:
 			System.out.println("Not recognized.");

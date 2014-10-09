@@ -1,8 +1,5 @@
 package smartscore.task;
 
-import org.apache.hadoop.filecache.TaskDistributedCacheManager;
-import org.apache.mahout.math.stats.TDigest;
-
 import redis.clients.jedis.Jedis;
 
 
