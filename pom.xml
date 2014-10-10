@@ -20,5 +20,15 @@
           <artifactId>logback-classic</artifactId>
           <version>1.1.2</version>
       </dependency>
+      <dependency>
+          <groupId>org.apache.mahout</groupId>
+          <artifactId>mahout-utils</artifactId>
+          <version>0.5</version>
+      </dependency>
+      <dependency>
+          <groupId>org.apache.mahout</groupId>
+          <artifactId>mahout-examples</artifactId>
+          <version>0.9</version>
+      </dependency>
   </dependencies>
 </project>

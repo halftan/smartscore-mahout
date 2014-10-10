@@ -1,14 +1,15 @@
-package smartscore.task;
+package org.ecnu.smartscore.task;
 
 import redis.clients.jedis.JedisPubSub;
 
-public class JedisListener extends JedisPubSub {
+public class RedisListener extends JedisPubSub {
 
 	@Override
 	public void onMessage(String channel, String message) {
 		System.out.println(String.format("Message from %s : %s", channel, message));
 		if (message.equals("byebye")) {
 			this.unsubscribe();
+			TaskPool.getInstance().terminate();
 			return;
 		}
 		

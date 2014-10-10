@@ -1,4 +1,4 @@
-package smartscore.task;
+package org.ecnu.smartscore.task;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -8,8 +8,9 @@ import org.slf4j.LoggerFactory;
 public class TaskPool extends Thread {
 
 	private static TaskPool mInst = null;
-	private Logger Logger;
+	private Logger log;
 	private final static long waitTime = 60*10*1000;    // 10 minutes
+	private volatile boolean mRunning;
 
 	private ConcurrentLinkedQueue<Runnable> mThreadPool;
 
@@ -22,25 +23,37 @@ public class TaskPool extends Thread {
 	
 	private TaskPool() {
 		mThreadPool = new ConcurrentLinkedQueue<Runnable>();
-		Logger = LoggerFactory.getLogger(this.getClass());
+		mRunning = true;
+		log = LoggerFactory.getLogger(this.getClass());
 	}
 	
 	public void put(TaskItem th) {
 		mThreadPool.add(th);
 	}
 	
+	public boolean terminate() {
+		mRunning = false;
+		try {
+			this.join(6000);
+		} catch (InterruptedException e) {
+			log.error("Terminate error.");
+			return false;
+		}
+		return true;
+	}
+	
 	@Override
 	public void run() {
 		try {
-			while (true) {
+			while (mRunning) {
 				if (mThreadPool.size() == 0) {
 					Thread.sleep(5000);
-					Logger.info("Sleeping.");
+					log.info("Sleeping.");
 				} else {
-					Logger.info("Executing thread.");
+					log.info("Executing thread.");
 					Runnable runnable = mThreadPool.poll();
 					if (runnable == null) {
-						Logger.error("Retrieved null task");
+						log.error("Retrieved null task");
 					} else {
 						Thread th = new Thread(runnable);
 						long startTime = System.currentTimeMillis();
@@ -48,15 +61,15 @@ public class TaskPool extends Thread {
 						try {
 							th.join(waitTime);
 							long endTime = System.currentTimeMillis();
-							Logger.info(String.format("Task completed in %d ms.", (endTime - startTime)));
+							log.info(String.format("Task completed in %d ms.", (endTime - startTime)));
 						} catch (InterruptedException e) {
-							Logger.error("Task interrupted due to overtiming.");
+							log.error("Task interrupted due to overtiming.");
 						}
 					}
 				}
 			}
 		} catch (InterruptedException e) {
-			Logger.trace("Exits.");
+			log.trace("Exits.");
 		}
 	}
 
