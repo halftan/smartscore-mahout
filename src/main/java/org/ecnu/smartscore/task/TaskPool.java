@@ -48,7 +48,7 @@ public class TaskPool extends Thread {
 			while (mRunning) {
 				if (mThreadPool.size() == 0) {
 					Thread.sleep(5000);
-					log.info("Sleeping.");
+					log.debug("Sleeping.");
 				} else {
 					log.info("Executing thread.");
 					Runnable runnable = mThreadPool.poll();
@@ -61,7 +61,7 @@ public class TaskPool extends Thread {
 						try {
 							th.join(waitTime);
 							long endTime = System.currentTimeMillis();
-							log.info(String.format("Task completed in %d ms.", (endTime - startTime)));
+							log.debug(String.format("Task completed in %d ms.", (endTime - startTime)));
 						} catch (InterruptedException e) {
 							log.error("Task interrupted due to overtiming.");
 						}

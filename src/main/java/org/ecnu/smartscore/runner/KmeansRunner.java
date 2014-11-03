@@ -32,21 +32,21 @@ public class KmeansRunner extends AbstractJob {
 	
 	public static void run() {
 		log.info("Running with default arguments");
-		try {
-			Thread.sleep(3000);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-//		Path output = new Path("output");
-//		Configuration conf = new Configuration();
 //		try {
-//			HadoopUtil.delete(conf, output);
-//			run(conf, new Path("testdata"), output,
-//					new EuclideanDistanceMeasure(), 6, 0.5, 10);
-//		} catch (Exception e) {
-//			log.error("Run task Kmeans error!");
+//			Thread.sleep(3000);
+//		} catch (InterruptedException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
 //		}
+		Path output = new Path("output");
+		Configuration conf = new Configuration();
+		try {
+			HadoopUtil.delete(conf, output);
+			_run(conf, new Path("testdata"), output,
+					new EuclideanDistanceMeasure(), 6, 0.5, 10);
+		} catch (Exception e) {
+			log.error("Run task Kmeans error!");
+		}
 	}
 	
 	@Override

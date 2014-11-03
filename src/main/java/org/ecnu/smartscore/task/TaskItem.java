@@ -33,7 +33,7 @@ public class TaskItem implements Runnable {
 			System.out.println("Running kmeans example case.");
 			try {
 				ClassLoader loader = this.getClass().getClassLoader();
-				Class runner = loader.loadClass("org.ecnu.smartscore.runner.KmeansRunner");
+				Class<?> runner = loader.loadClass("org.ecnu.smartscore.runner.KmeansRunner");
 				Method runMethod = runner.getMethod("run");
 				runMethod.invoke(null);
 			} catch (ClassNotFoundException e) {
