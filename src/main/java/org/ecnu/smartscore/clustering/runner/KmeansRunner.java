@@ -1,15 +1,12 @@
-package org.ecnu.smartscore.runner;
+package org.ecnu.smartscore.clustering.runner;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.util.ToolRunner;
 import org.apache.mahout.clustering.Cluster;
 import org.apache.mahout.clustering.canopy.CanopyDriver;
-import org.apache.mahout.clustering.conversion.InputDriver;
 import org.apache.mahout.clustering.kmeans.KMeansDriver;
 import org.apache.mahout.clustering.kmeans.RandomSeedGenerator;
 import org.apache.mahout.common.AbstractJob;
@@ -19,7 +16,7 @@ import org.apache.mahout.common.commandline.DefaultOptionCreator;
 import org.apache.mahout.common.distance.DistanceMeasure;
 import org.apache.mahout.common.distance.EuclideanDistanceMeasure;
 import org.apache.mahout.common.distance.SquaredEuclideanDistanceMeasure;
-import org.apache.mahout.utils.clustering.ClusterDumper;
+import org.ecnu.smartscore.clustering.conversion.InputDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +32,6 @@ public class KmeansRunner extends AbstractJob {
 //		try {
 //			Thread.sleep(3000);
 //		} catch (InterruptedException e) {
-//			// TODO Auto-generated catch block
 //			e.printStackTrace();
 //		}
 		Path output = new Path("output");
@@ -45,7 +41,7 @@ public class KmeansRunner extends AbstractJob {
 			_run(conf, new Path("testdata"), output,
 					new EuclideanDistanceMeasure(), 6, 0.5, 10);
 		} catch (Exception e) {
-			log.error("Run task Kmeans error!");
+			log.error("Run task Kmeans error!", e);
 		}
 	}
 	
@@ -137,14 +133,14 @@ public class KmeansRunner extends AbstractJob {
 		KMeansDriver.run(conf, directoryContainingConvertedInput, clusters,
 				output, convergenceDelta, maxIterations, true, 0.0, false);
 		// run ClusterDumper
-		Path outGlob = new Path(output, "clusters-*-final");
-		Path clusteredPoints = new Path(output, "clusteredPoints");
-		log.info(
-				"Dumping out clusters from clusters: {} and clusteredPoints: {}",
-				outGlob, clusteredPoints);
-		ClusterDumper clusterDumper = new ClusterDumper(outGlob,
-				clusteredPoints);
-		clusterDumper.printClusters(null);
+//		Path outGlob = new Path(output, "clusters-*-final");
+//		Path clusteredPoints = new Path(output, "clusteredPoints");
+//		log.info(
+//				"Dumping out clusters from clusters: {} and clusteredPoints: {}",
+//				outGlob, clusteredPoints);
+//		ClusterDumper clusterDumper = new ClusterDumper(outGlob,
+//				clusteredPoints);
+//		clusterDumper.printClusters(null);
 	}
 
 	/**
@@ -194,8 +190,8 @@ public class KmeansRunner extends AbstractJob {
 				canopyOutput, Cluster.INITIAL_CLUSTERS_DIR + "-final"), output,
 				convergenceDelta, maxIterations, true, 0.0, false);
 		// run ClusterDumper
-		ClusterDumper clusterDumper = new ClusterDumper(new Path(output,
-				"clusters-*-final"), new Path(output, "clusteredPoints"));
-		clusterDumper.printClusters(null);
+//		ClusterDumper clusterDumper = new ClusterDumper(new Path(output,
+//				"clusters-*-final"), new Path(output, "clusteredPoints"));
+//		clusterDumper.printClusters(null);
 	}
 }
