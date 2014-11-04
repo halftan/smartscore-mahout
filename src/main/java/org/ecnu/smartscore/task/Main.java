@@ -3,7 +3,7 @@ package org.ecnu.smartscore.task;
 import redis.clients.jedis.Jedis;
 
 
-public class MainTask {
+public class Main {
 
 	public static final void main(String[] args) {
 		TaskPool taskPool = TaskPool.getInstance();
