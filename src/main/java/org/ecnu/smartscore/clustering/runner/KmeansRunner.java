@@ -16,6 +16,7 @@ import org.apache.mahout.common.commandline.DefaultOptionCreator;
 import org.apache.mahout.common.distance.DistanceMeasure;
 import org.apache.mahout.common.distance.EuclideanDistanceMeasure;
 import org.apache.mahout.common.distance.SquaredEuclideanDistanceMeasure;
+import org.apache.mahout.utils.clustering.ClusterDumper;
 import org.ecnu.smartscore.clustering.conversion.InputDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +28,7 @@ public class KmeansRunner extends AbstractJob {
 
 	private KmeansRunner() {}
 	
-	public static void run() {
+	public static void run() throws Exception {
 		log.info("Running with default arguments");
 //		try {
 //			Thread.sleep(3000);
@@ -42,6 +43,7 @@ public class KmeansRunner extends AbstractJob {
 					new EuclideanDistanceMeasure(), 6, 0.5, 10);
 		} catch (Exception e) {
 			log.error("Run task Kmeans error!", e);
+			throw e;
 		}
 	}
 	
@@ -133,14 +135,14 @@ public class KmeansRunner extends AbstractJob {
 		KMeansDriver.run(conf, directoryContainingConvertedInput, clusters,
 				output, convergenceDelta, maxIterations, true, 0.0, false);
 		// run ClusterDumper
-//		Path outGlob = new Path(output, "clusters-*-final");
-//		Path clusteredPoints = new Path(output, "clusteredPoints");
-//		log.info(
-//				"Dumping out clusters from clusters: {} and clusteredPoints: {}",
-//				outGlob, clusteredPoints);
-//		ClusterDumper clusterDumper = new ClusterDumper(outGlob,
-//				clusteredPoints);
-//		clusterDumper.printClusters(null);
+		Path outGlob = new Path(output, "clusters-*-final");
+		Path clusteredPoints = new Path(output, "clusteredPoints");
+		log.info(
+				"Dumping out clusters from clusters: {} and clusteredPoints: {}",
+				outGlob, clusteredPoints);
+		ClusterDumper clusterDumper = new ClusterDumper(outGlob,
+				clusteredPoints);
+		clusterDumper.printClusters(null);
 	}
 
 	/**
@@ -190,8 +192,8 @@ public class KmeansRunner extends AbstractJob {
 				canopyOutput, Cluster.INITIAL_CLUSTERS_DIR + "-final"), output,
 				convergenceDelta, maxIterations, true, 0.0, false);
 		// run ClusterDumper
-//		ClusterDumper clusterDumper = new ClusterDumper(new Path(output,
-//				"clusters-*-final"), new Path(output, "clusteredPoints"));
-//		clusterDumper.printClusters(null);
+		ClusterDumper clusterDumper = new ClusterDumper(new Path(output,
+				"clusters-*-final"), new Path(output, "clusteredPoints"));
+		clusterDumper.printClusters(null);
 	}
 }

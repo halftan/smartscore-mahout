@@ -27,25 +27,34 @@ public class TaskItem implements Runnable {
 	public void run() {
 		switch (mOption) {
 		case "bye":
-			System.out.println("Quit.");
+			log.info("Quit.");
 			break;
 		case "kmeans":
-			System.out.println("Running kmeans example case.");
-			try {
-				ClassLoader loader = this.getClass().getClassLoader();
-				Class<?> runner = loader.loadClass("org.ecnu.smartscore.clustering.runner.KmeansRunner");
-				Method runMethod = runner.getMethod("run");
-				runMethod.invoke(null);
-			} catch (ClassNotFoundException e) {
-				log.error("Required class org.ecnu.smartscore.runner.KmeansRunner not loaded!");
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			log.info("Running kmeans example case.");
+			invokeRunner("KmeansRunner");
+			log.info("Task K-Means finished successfully.");
+			break;
+		case "fuzzyk":
+			log.info("Runninng fuzzy kmeans example case.");
+			invokeRunner("FuzzyKmeansRunner");
+			log.info("Task Fuzzy K-Means finished successfully.");
 			break;
 		default:
-			System.out.println("Not recognized.");
+			log.error("Not recognized.");
 			break;
+		}
+	}
+	
+	private void invokeRunner(String className) {
+		try {
+			ClassLoader loader = this.getClass().getClassLoader();
+			Class<?> runner = loader.loadClass("org.ecnu.smartscore.clustering.runner."+className);
+			Method runMethod = runner.getMethod("run");
+			runMethod.invoke(null);
+		} catch (ClassNotFoundException e) {
+			log.error("Required class org.ecnu.smartscore.runner."+className+" not loaded!");
+		} catch (Exception e) {
+			log.error("Unknwon error in task runner "+className, e);
 		}
 	}
 }

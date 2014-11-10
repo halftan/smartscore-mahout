@@ -10,7 +10,7 @@ public class Main {
 		taskPool.start();
 		
 		Jedis redis = new Jedis("localhost", 6379);
-		redis.subscribe(new RedisListener(), "testchannel");
+		redis.subscribe(new RedisListener(), "smartscore-taskqueue");
 		redis.close();
 	}
 }
