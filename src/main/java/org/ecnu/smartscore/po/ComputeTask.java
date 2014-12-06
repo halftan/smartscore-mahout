@@ -13,6 +13,7 @@ public class ComputeTask {
 	private String inputPath;
 	private String outputPath;
 	private String runner;
+	private String email;
 
 	/**
 	 * @param taskId
@@ -21,12 +22,13 @@ public class ComputeTask {
 	 * @param runner
 	 */
 	public ComputeTask(int taskId, String inputPath, String outputPath,
-			String runner) {
+			String runner, String email) {
 		super();
 		this.taskId = taskId;
 		this.inputPath = inputPath;
 		this.outputPath = outputPath;
 		this.runner = runner;
+		this.email = email;
 	}
 
 	/**
@@ -55,6 +57,13 @@ public class ComputeTask {
 	 */
 	public String getRunner() {
 		return runner;
+	}
+
+	/**
+	 * @return the email
+	 */
+	public String getEmail() {
+		return email;
 	}
 
 }

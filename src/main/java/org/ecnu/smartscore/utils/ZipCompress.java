@@ -7,6 +7,10 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+/**
+ * @author Microdog <dlangu0393@gmail.com>
+ *
+ */
 public class ZipCompress {
 
 	public static void main(String[] args) throws Exception {

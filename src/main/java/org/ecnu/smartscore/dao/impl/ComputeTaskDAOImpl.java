@@ -29,16 +29,17 @@ public class ComputeTaskDAOImpl extends BaseDAOImpl implements IComputeTaskDAO {
 	public ComputeTask getComputeTaskByTaskId(int taskId) {
 		ComputeTask resultTask = null;
 
-		String query = "SELECT `inputPath`, `outputPath`, `runner` FROM `tasks` WHERE `id` = ? AND `state` = 0";
+		String query = "SELECT `inputPath`, `outputPath`, `runner`, `username` FROM `tasks` JOIN `users` ON `tasks`.`uid` = `users`.`id` WHERE `tasks`.`id` = ? AND `state` = 0";
 		try {
 			PreparedStatement stmt = conn.prepareStatement(query);
 			stmt.setInt(1, taskId);
+			LOGGER.debug(stmt.toString());
 			stmt.execute();
 			ResultSet rs = stmt.getResultSet();
 
 			while (rs.next()) {
 				resultTask = new ComputeTask(taskId, rs.getString(1),
-						rs.getString(2), rs.getString(3));
+						rs.getString(2), rs.getString(3), rs.getString(4));
 			}
 
 			rs.close();
@@ -56,7 +57,13 @@ public class ComputeTaskDAOImpl extends BaseDAOImpl implements IComputeTaskDAO {
 
 	@Override
 	public void updateComputeTaskStateByTaskId(int taskId, short state) {
-		String query = "UPDATE `tasks` SET `state` = ? WHERE `id` = ?";
+		String query = null;
+		if (state == STATE_FINISHED) {
+			query = "UPDATE `tasks` SET `state` = ?, `finishTime` = CURRENT_TIMESTAMP() WHERE `id` = ?";
+		} else {
+			query = "UPDATE `tasks` SET `state` = ? WHERE `id` = ?";
+		}
+
 		try {
 			PreparedStatement stmt = conn.prepareStatement(query);
 			stmt.setShort(1, state);

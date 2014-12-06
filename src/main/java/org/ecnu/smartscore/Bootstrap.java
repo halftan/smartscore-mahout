@@ -2,6 +2,7 @@ package org.ecnu.smartscore;
 
 import org.ecnu.smartscore.configs.ServerConfig;
 import org.ecnu.smartscore.database.DatabaseConnection;
+import org.ecnu.smartscore.mail.MailService;
 import org.ecnu.smartscore.redis.RedisListener;
 import org.ecnu.smartscore.utils.LoggerLoader;
 
@@ -18,6 +19,9 @@ public class Bootstrap {
 
 		// Prepare database connection pool
 		DatabaseConnection.load();
+
+		// Prepare mail service
+		MailService.load();
 
 		// Connect redis
 		Jedis redis = new Jedis(ServerConfig.getString("sc.redis.host"),

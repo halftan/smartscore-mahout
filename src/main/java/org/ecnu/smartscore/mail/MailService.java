@@ -16,17 +16,13 @@ import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
+import org.ecnu.smartscore.configs.ServerConfig;
+
 /**
  * @author Microdog <dlangu0393@gmail.com>
  *
  */
 public class MailService {
-
-	private static final String CONFIG_PROTOCOL = "smtps";
-	private static final String CONFIG_HOST = "smtp.gmail.com";
-	private static final int CONFIG_PORT = 465;
-	private static final String CONFIG_USERNAME = "you@gmail.com";
-	private static final String CONFIG_PASSWORD = "Password";
 
 	private static MailService selfInstance = null;
 
@@ -40,13 +36,22 @@ public class MailService {
 
 	public static MailService getInstance() {
 		if (selfInstance == null) {
-			MailService selfInstance = new MailService(CONFIG_PROTOCOL,
-					CONFIG_HOST, CONFIG_PORT, CONFIG_USERNAME, CONFIG_PASSWORD);
+			MailService selfInstance = new MailService(
+					ServerConfig.getString("sc.mail.protocol"),
+					ServerConfig.getString("sc.mail.host"),
+					ServerConfig.getInteger("sc.mail.port"),
+					ServerConfig.getString("sc.mail.username"),
+					ServerConfig.getString("sc.mail.password"));
 
 			selfInstance.buildSession();
 			selfInstance.connect();
+			MailService.selfInstance = selfInstance;
 		}
 		return selfInstance;
+	}
+
+	public static void load() {
+		MailService.getInstance();
 	}
 
 	private MailService(String protocol, String mailHost, int port,
@@ -143,7 +148,7 @@ public class MailService {
 
 		msg.setDataHandler(content);
 
-		msg.setHeader("X-Mailer", "Microdog Mailer");
+		msg.setHeader("X-Mailer", "Smartscore Mailer");
 		msg.setSentDate(new Date());
 
 		// send the thing off
@@ -154,6 +159,18 @@ public class MailService {
 			String bcc, DataHandler content) {
 		try {
 			_sendMail(to, subject, from, cc, bcc, content);
+		} catch (Exception e) {
+			return false;
+		}
+		return true;
+	}
+
+	public boolean sendMail(String to, DataHandler content) {
+		try {
+			_sendMail(to, ServerConfig.getString("sc.mail.subject"),
+					ServerConfig.getString("sc.mail.from"),
+					ServerConfig.getString("sc.mail.cc"),
+					ServerConfig.getString("sc.mail.bcc"), content);
 		} catch (Exception e) {
 			return false;
 		}
