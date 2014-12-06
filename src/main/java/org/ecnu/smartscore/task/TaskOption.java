@@ -10,17 +10,15 @@ package org.ecnu.smartscore.task;
 public class TaskOption {
 
 	private int taskId;
-	private String runner;
-	private String inputPath;
 
 	public static TaskOption parse(String message) {
-		String[] sections = message.split(" ");
-		if (sections.length != 3) {
+		String[] sections = message.split("\\n");
+		if (sections.length != 1) {
 			return null;
 		}
 		try {
 			int taskId = Integer.parseInt(sections[0]);
-			return new TaskOption(taskId, sections[1], sections[2]);
+			return new TaskOption(taskId);
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
@@ -32,11 +30,9 @@ public class TaskOption {
 	 * @param runner
 	 * @param inputPath
 	 */
-	public TaskOption(int taskId, String runner, String inputPath) {
+	public TaskOption(int taskId) {
 		super();
 		this.taskId = taskId;
-		this.runner = runner;
-		this.inputPath = inputPath;
 	}
 
 	/**
@@ -44,26 +40,6 @@ public class TaskOption {
 	 */
 	public int getTaskId() {
 		return taskId;
-	}
-
-	/**
-	 * @return the runner
-	 */
-	public String getRunner() {
-		return runner;
-	}
-
-	/**
-	 * @return the inputPath
-	 */
-	public String getInputPath() {
-		return inputPath;
-	}
-
-	@Override
-	public String toString() {
-		return String.format("TaskOption(taskId=%d,runner=%s,inputPath=%s)",
-				taskId, runner, inputPath);
 	}
 
 }

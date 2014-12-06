@@ -23,18 +23,21 @@ import org.slf4j.LoggerFactory;
 
 public class KmeansRunner extends AbstractJob {
 
-	private static final Logger log = LoggerFactory.getLogger(KmeansRunner.class);
+	private static final Logger log = LoggerFactory
+			.getLogger(KmeansRunner.class);
 	private static final String DIRECTORY_CONTAINING_CONVERTED_INPUT = "data";
 
-	private KmeansRunner() {}
-	
-	public static void run() throws Exception {
+	private KmeansRunner() {
+	}
+
+	public static void run(String inputPath, String outputPath)
+			throws Exception {
 		log.info("Running with default arguments");
-//		try {
-//			Thread.sleep(3000);
-//		} catch (InterruptedException e) {
-//			e.printStackTrace();
-//		}
+		// try {
+		// Thread.sleep(3000);
+		// } catch (InterruptedException e) {
+		// e.printStackTrace();
+		// }
 		Path output = new Path("output");
 		Configuration conf = new Configuration();
 		try {
@@ -46,8 +49,9 @@ public class KmeansRunner extends AbstractJob {
 			throw e;
 		}
 	}
-	
+
 	@Override
+	@Deprecated
 	public int run(String[] args) throws Exception {
 		addInputOption();
 		addOutputOption();
@@ -135,14 +139,14 @@ public class KmeansRunner extends AbstractJob {
 		KMeansDriver.run(conf, directoryContainingConvertedInput, clusters,
 				output, convergenceDelta, maxIterations, true, 0.0, false);
 		// run ClusterDumper
-		Path outGlob = new Path(output, "clusters-*-final");
-		Path clusteredPoints = new Path(output, "clusteredPoints");
-		log.info(
-				"Dumping out clusters from clusters: {} and clusteredPoints: {}",
-				outGlob, clusteredPoints);
-		ClusterDumper clusterDumper = new ClusterDumper(outGlob,
-				clusteredPoints);
-		clusterDumper.printClusters(null);
+		// Path outGlob = new Path(output, "clusters-*-final");
+		// Path clusteredPoints = new Path(output, "clusteredPoints");
+		// log.info(
+		// "Dumping out clusters from clusters: {} and clusteredPoints: {}",
+		// outGlob, clusteredPoints);
+		// ClusterDumper clusterDumper = new ClusterDumper(outGlob,
+		// clusteredPoints);
+		// clusterDumper.printClusters(null);
 	}
 
 	/**
@@ -174,6 +178,7 @@ public class KmeansRunner extends AbstractJob {
 	 * @param maxIterations
 	 *            the int maximum number of iterations
 	 */
+	@Deprecated
 	public static void run(Configuration conf, Path input, Path output,
 			DistanceMeasure measure, double t1, double t2,
 			double convergenceDelta, int maxIterations) throws Exception {
@@ -194,6 +199,6 @@ public class KmeansRunner extends AbstractJob {
 		// run ClusterDumper
 		ClusterDumper clusterDumper = new ClusterDumper(new Path(output,
 				"clusters-*-final"), new Path(output, "clusteredPoints"));
-		clusterDumper.printClusters(null);
+		// clusterDumper.printClusters(null);
 	}
 }

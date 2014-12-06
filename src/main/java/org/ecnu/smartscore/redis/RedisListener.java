@@ -1,5 +1,8 @@
-package org.ecnu.smartscore.task;
+package org.ecnu.smartscore.redis;
 
+import org.ecnu.smartscore.task.TaskItem;
+import org.ecnu.smartscore.task.TaskOption;
+import org.ecnu.smartscore.task.TaskPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -7,12 +10,12 @@ import redis.clients.jedis.JedisPubSub;
 
 public class RedisListener extends JedisPubSub {
 
-	private static Logger log = LoggerFactory.getLogger(RedisListener.class);
+	private final static Logger LOGGER = LoggerFactory
+			.getLogger(RedisListener.class);
 
 	@Override
 	public void onMessage(String channel, String message) {
-		System.out.println(String.format("Message from %s : %s", channel,
-				message));
+		LOGGER.debug("Message from {} : {}", channel, message);
 		if (message.equals("byebye")) {
 			this.unsubscribe();
 			TaskPool.getInstance().terminate();
@@ -21,7 +24,7 @@ public class RedisListener extends JedisPubSub {
 
 		TaskOption option = TaskOption.parse(message);
 		if (option == null) {
-			log.warn("Unacceptable message got: {}", message);
+			LOGGER.warn("Unacceptable message got: {}", message);
 		} else {
 			TaskPool.getInstance().put(new TaskItem(option));
 		}
@@ -47,14 +50,12 @@ public class RedisListener extends JedisPubSub {
 
 	@Override
 	public void onSubscribe(String channel, int subscribedChannels) {
-		System.out.println(String.format("Subscribe(%d) on %s",
-				subscribedChannels, channel));
+		LOGGER.info("Subscribe({}) on {}", subscribedChannels, channel);
 	}
 
 	@Override
 	public void onUnsubscribe(String channel, int subscribedChannels) {
-		System.out.println(String.format("Unsubscribe(%d) on %s",
-				subscribedChannels, channel));
+		LOGGER.info("Unsubscribe({}) on {}", subscribedChannels, channel);
 	}
 
 }
