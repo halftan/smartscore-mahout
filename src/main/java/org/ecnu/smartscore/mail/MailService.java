@@ -128,6 +128,10 @@ public class MailService {
 	private void _sendMail(String to, String subject, String from, String cc,
 			String bcc, DataHandler content) throws AddressException,
 			MessagingException {
+		if (!transport.isConnected()) {
+			_connect();
+		}
+
 		// construct the message
 		Message msg = new MimeMessage(session);
 		if (from != null)

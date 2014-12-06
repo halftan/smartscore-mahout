@@ -38,7 +38,7 @@ public class ZipCompress {
 
 		// Do compress recursively
 		recursionZip(compressDir, zipOutputStream, compressDir.getParent()
-				+ "\\");
+				+ "/");
 
 		// Close ZipOutputStream
 		zipOutputStream.close();
@@ -112,7 +112,7 @@ public class ZipCompress {
 		ZipInputStream zipInputStream = new ZipInputStream(zipFileInputStream);
 
 		// Path of parent directory of compressed file
-		String basePath = zipFile.getParent() + "\\";
+		String basePath = zipFile.getParent() + "/";
 
 		// Output file read and parent file of it
 		File outputFile, parentFile;
@@ -128,7 +128,7 @@ public class ZipCompress {
 		while ((entry = zipInputStream.getNextEntry()) != null) {
 			if (entry.isDirectory()) {
 				// Directory found, create directory
-				new File(basePath + entry.getName() + "\\").mkdir();
+				new File(basePath + entry.getName() + "/").mkdir();
 			} else {
 				// Create output file
 				outputFile = new File(basePath + entry.getName());
