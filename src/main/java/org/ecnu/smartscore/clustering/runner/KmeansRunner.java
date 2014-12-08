@@ -23,31 +23,37 @@ import org.slf4j.LoggerFactory;
 
 public class KmeansRunner extends AbstractJob {
 
-	private static final Logger log = LoggerFactory.getLogger(KmeansRunner.class);
+	private static final Logger LOGGER = LoggerFactory
+			.getLogger(KmeansRunner.class);
 	private static final String DIRECTORY_CONTAINING_CONVERTED_INPUT = "data";
 
-	private KmeansRunner() {}
-	
-	public static void run() throws Exception {
-		log.info("Running with default arguments");
-//		try {
-//			Thread.sleep(3000);
-//		} catch (InterruptedException e) {
-//			e.printStackTrace();
-//		}
-		Path output = new Path("output");
+	private KmeansRunner() {
+	}
+
+	public static void run(String inputPath, String outputPath)
+			throws Exception {
+		LOGGER.info(
+				"Running with default arguments, input/output path: {}, {}",
+				inputPath, outputPath);
+
+		Path input = new Path(inputPath);
+		Path output = new Path(outputPath);
 		Configuration conf = new Configuration();
 		try {
+			LOGGER.debug("Cleanup...");
 			HadoopUtil.delete(conf, output);
-			_run(conf, new Path("testdata"), output,
-					new EuclideanDistanceMeasure(), 6, 0.5, 10);
+
+			LOGGER.debug("Running...");
+			_run(conf, input, output, new EuclideanDistanceMeasure(), 6, 0.5,
+					10);
 		} catch (Exception e) {
-			log.error("Run task Kmeans error!", e);
+			LOGGER.error("Run task Kmeans error!", e);
 			throw e;
 		}
 	}
-	
+
 	@Override
+	@Deprecated
 	public int run(String[] args) throws Exception {
 		addInputOption();
 		addOutputOption();
@@ -124,25 +130,25 @@ public class KmeansRunner extends AbstractJob {
 			int maxIterations) throws Exception {
 		Path directoryContainingConvertedInput = new Path(output,
 				DIRECTORY_CONTAINING_CONVERTED_INPUT);
-		log.info("Preparing Input");
+		LOGGER.info("Preparing Input");
 		InputDriver.runJob(input, directoryContainingConvertedInput,
 				"org.apache.mahout.math.RandomAccessSparseVector");
-		log.info("Running random seed to get initial clusters");
+		LOGGER.info("Running random seed to get initial clusters");
 		Path clusters = new Path(output, "random-seeds");
 		clusters = RandomSeedGenerator.buildRandom(conf,
 				directoryContainingConvertedInput, clusters, k, measure);
-		log.info("Running KMeans with k = {}", k);
+		LOGGER.info("Running KMeans with k = {}", k);
 		KMeansDriver.run(conf, directoryContainingConvertedInput, clusters,
 				output, convergenceDelta, maxIterations, true, 0.0, false);
 		// run ClusterDumper
-		Path outGlob = new Path(output, "clusters-*-final");
-		Path clusteredPoints = new Path(output, "clusteredPoints");
-		log.info(
-				"Dumping out clusters from clusters: {} and clusteredPoints: {}",
-				outGlob, clusteredPoints);
-		ClusterDumper clusterDumper = new ClusterDumper(outGlob,
-				clusteredPoints);
-		clusterDumper.printClusters(null);
+		// Path outGlob = new Path(output, "clusters-*-final");
+		// Path clusteredPoints = new Path(output, "clusteredPoints");
+		// log.info(
+		// "Dumping out clusters from clusters: {} and clusteredPoints: {}",
+		// outGlob, clusteredPoints);
+		// ClusterDumper clusterDumper = new ClusterDumper(outGlob,
+		// clusteredPoints);
+		// clusterDumper.printClusters(null);
 	}
 
 	/**
@@ -174,26 +180,27 @@ public class KmeansRunner extends AbstractJob {
 	 * @param maxIterations
 	 *            the int maximum number of iterations
 	 */
+	@Deprecated
 	public static void run(Configuration conf, Path input, Path output,
 			DistanceMeasure measure, double t1, double t2,
 			double convergenceDelta, int maxIterations) throws Exception {
 		Path directoryContainingConvertedInput = new Path(output,
 				DIRECTORY_CONTAINING_CONVERTED_INPUT);
-		log.info("Preparing Input");
+		LOGGER.info("Preparing Input");
 		InputDriver.runJob(input, directoryContainingConvertedInput,
 				"org.apache.mahout.math.RandomAccessSparseVector");
-		log.info("Running Canopy to get initial clusters");
+		LOGGER.info("Running Canopy to get initial clusters");
 		Path canopyOutput = new Path(output, "canopies");
 		CanopyDriver.run(new Configuration(),
 				directoryContainingConvertedInput, canopyOutput, measure, t1,
 				t2, false, 0.0, false);
-		log.info("Running KMeans");
+		LOGGER.info("Running KMeans");
 		KMeansDriver.run(conf, directoryContainingConvertedInput, new Path(
 				canopyOutput, Cluster.INITIAL_CLUSTERS_DIR + "-final"), output,
 				convergenceDelta, maxIterations, true, 0.0, false);
 		// run ClusterDumper
 		ClusterDumper clusterDumper = new ClusterDumper(new Path(output,
 				"clusters-*-final"), new Path(output, "clusteredPoints"));
-		clusterDumper.printClusters(null);
+		// clusterDumper.printClusters(null);
 	}
 }
