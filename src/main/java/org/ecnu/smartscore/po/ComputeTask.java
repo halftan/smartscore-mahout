@@ -3,6 +3,8 @@
  */
 package org.ecnu.smartscore.po;
 
+import org.ecnu.smartscore.task.TaskOption;
+
 /**
  * @author Microdog <dlangu0393@gmail.com>
  *
@@ -14,6 +16,8 @@ public class ComputeTask {
 	private String outputPath;
 	private String runner;
 	private String email;
+
+    private TaskOption option;
 
 	/**
 	 * @param taskId
@@ -30,6 +34,14 @@ public class ComputeTask {
 		this.runner = runner;
 		this.email = email;
 	}
+
+    public ComputeTask(TaskOption option) {
+        this.inputPath = option.getInput();
+        this.outputPath = option.getOutput();
+        this.taskId = option.getTaskId();
+        this.option = option;
+        this.runner = option.getModelType();
+    }
 
 	/**
 	 * @return the taskId

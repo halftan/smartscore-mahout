@@ -33,55 +33,55 @@ import org.apache.mahout.math.VectorWritable;
 
 public class InputMapper extends Mapper<LongWritable, Text, Text, VectorWritable> {
 
-  private static final Pattern SPACE = Pattern.compile(" ");
+    private static final Pattern SPACE = Pattern.compile(" ");
 
-  private Constructor<?> constructor;
+    private Constructor<?> constructor;
 
-  @Override
-  protected void map(LongWritable key, Text values, Context context) throws IOException, InterruptedException {
+    @Override
+    protected void map(LongWritable key, Text values, Context context) throws IOException, InterruptedException {
 
-    String[] numbers = SPACE.split(values.toString());
-    // sometimes there are multiple separator spaces
-    Collection<Double> doubles = Lists.newArrayList();
-    for (String value : numbers) {
-      if (!value.isEmpty()) {
-        doubles.add(Double.valueOf(value));
-      }
-    }
-    // ignore empty lines in data file
-    if (!doubles.isEmpty()) {
-      try {
-        Vector result = (Vector) constructor.newInstance(doubles.size());
-        int index = 0;
-        for (Double d : doubles) {
-          result.set(index++, d);
+        String[] numbers = SPACE.split(values.toString());
+        // sometimes there are multiple separator spaces
+        Collection<Double> doubles = Lists.newArrayList();
+        for (String value : numbers) {
+            if (!value.isEmpty()) {
+                doubles.add(Double.valueOf(value));
+            }
         }
-        VectorWritable vectorWritable = new VectorWritable(result);
-        context.write(new Text(String.valueOf(index)), vectorWritable);
+        // ignore empty lines in data file
+        if (!doubles.isEmpty()) {
+            try {
+                Vector result = (Vector) constructor.newInstance(doubles.size());
+                int index = 0;
+                for (Double d : doubles) {
+                    result.set(index++, d);
+                }
+                VectorWritable vectorWritable = new VectorWritable(result);
+                context.write(new Text(String.valueOf(index)), vectorWritable);
 
-      } catch (InstantiationException e) {
-        throw new IllegalStateException(e);
-      } catch (IllegalAccessException e) {
-        throw new IllegalStateException(e);
-      } catch (InvocationTargetException e) {
-        throw new IllegalStateException(e);
-      }
+            } catch (InstantiationException e) {
+                throw new IllegalStateException(e);
+            } catch (IllegalAccessException e) {
+                throw new IllegalStateException(e);
+            } catch (InvocationTargetException e) {
+                throw new IllegalStateException(e);
+            }
+        }
     }
-  }
 
-  @Override
-  protected void setup(Context context) throws IOException, InterruptedException {
-    super.setup(context);
-    Configuration conf = context.getConfiguration();
-    String vectorImplClassName = conf.get("vector.implementation.class.name");
-    try {
-      Class<? extends Vector> outputClass = conf.getClassByName(vectorImplClassName).asSubclass(Vector.class);
-      constructor = outputClass.getConstructor(int.class);
-    } catch (NoSuchMethodException e) {
-      throw new IllegalStateException(e);
-    } catch (ClassNotFoundException e) {
-      throw new IllegalStateException(e);
+    @Override
+    protected void setup(Context context) throws IOException, InterruptedException {
+        super.setup(context);
+        Configuration conf = context.getConfiguration();
+        String vectorImplClassName = conf.get("vector.implementation.class.name");
+        try {
+            Class<? extends Vector> outputClass = conf.getClassByName(vectorImplClassName).asSubclass(Vector.class);
+            constructor = outputClass.getConstructor(int.class);
+        } catch (NoSuchMethodException e) {
+            throw new IllegalStateException(e);
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException(e);
+        }
     }
-  }
 
 }

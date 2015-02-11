@@ -21,7 +21,7 @@ public class Bootstrap {
 		DatabaseConnection.load();
 
 		// Prepare mail service
-		MailService.load();
+//		MailService.load();
 
 		// Connect redis
 		Jedis redis = new Jedis(ServerConfig.getString("sc.redis.host"),

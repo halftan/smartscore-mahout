@@ -7,8 +7,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import org.ecnu.smartscore.configs.ServerConfig;
 import org.ecnu.smartscore.dao.IComputeTaskDAO;
 import org.ecnu.smartscore.po.ComputeTask;
+import org.ecnu.smartscore.task.TaskOption;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,17 +31,18 @@ public class ComputeTaskDAOImpl extends BaseDAOImpl implements IComputeTaskDAO {
 	public ComputeTask getComputeTaskByTaskId(int taskId) {
 		ComputeTask resultTask = null;
 
-		String query = "SELECT `inputPath`, `outputPath`, `runner`, `username` FROM `tasks` JOIN `users` ON `tasks`.`uid` = `users`.`id` WHERE `tasks`.`id` = ? AND `state` = 0";
+		String query = "SELECT * FROM `task` WHERE `task`.`id` = ? " +
+                "AND `state` = " + String.valueOf(STATE_WAITING);
 		try {
 			PreparedStatement stmt = conn.prepareStatement(query);
 			stmt.setInt(1, taskId);
-			LOGGER.debug(stmt.toString());
+			LOGGER.debug("[SQL] {}", stmt.toString());
 			stmt.execute();
 			ResultSet rs = stmt.getResultSet();
 
 			while (rs.next()) {
-				resultTask = new ComputeTask(taskId, rs.getString(1),
-						rs.getString(2), rs.getString(3), rs.getString(4));
+                String param = rs.getString(ServerConfig.getString("sc.database.task.content_column_name"));
+				resultTask = new ComputeTask(TaskOption.parse(param));
 			}
 
 			rs.close();
@@ -58,11 +61,17 @@ public class ComputeTaskDAOImpl extends BaseDAOImpl implements IComputeTaskDAO {
 	@Override
 	public void updateComputeTaskStateByTaskId(int taskId, short state) {
 		String query = null;
-		if (state == STATE_FINISHED) {
-			query = "UPDATE `tasks` SET `state` = ?, `finishTime` = CURRENT_TIMESTAMP() WHERE `id` = ?";
-		} else {
-			query = "UPDATE `tasks` SET `state` = ? WHERE `id` = ?";
-		}
+        switch (state) {
+            case STATE_FINISHED:
+                query = "UPDATE `task` SET `state` = ?, `complete_at` = CURRENT_TIMESTAMP() WHERE `id` = ?";
+                break;
+            case STATE_RUNNING:
+                query = "UPDATE `task` SET `state` = ?, `confirm_at` = CURRENT_TIMESTAMP() WHERE `id` = ?";
+                break;
+            default:
+                query = "UPDATE `tasks` SET `state` = ? WHERE `id` = ?";
+                break;
+        }
 
 		try {
 			PreparedStatement stmt = conn.prepareStatement(query);

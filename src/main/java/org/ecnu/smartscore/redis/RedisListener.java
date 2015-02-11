@@ -15,7 +15,7 @@ public class RedisListener extends JedisPubSub {
 
 	@Override
 	public void onMessage(String channel, String message) {
-		LOGGER.debug("Message from {} : {}", channel, message);
+		LOGGER.debug("[task] ; Message from {} ; {}", channel, message);
 		if (message.equals("byebye")) {
 			this.unsubscribe();
 			TaskPool.getInstance().terminate();
@@ -24,7 +24,7 @@ public class RedisListener extends JedisPubSub {
 
 		TaskOption option = TaskOption.parse(message);
 		if (option == null) {
-			LOGGER.warn("Unacceptable message got: {}", message);
+			LOGGER.warn("[task] ; Unacceptable message ; {}", message);
 		} else {
 			TaskPool.getInstance().put(new TaskItem(option));
 		}

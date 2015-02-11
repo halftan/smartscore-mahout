@@ -7,6 +7,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
 
 import org.ecnu.smartscore.utils.FilePath;
@@ -87,6 +89,14 @@ public class ServerConfig {
 	public static String getString(String key) {
 		return p.getProperty(key);
 	}
+
+    public static List<String> getStringList(String key) {
+        return getStringList(key, ",");
+    }
+
+    public static List<String> getStringList(String key, String splitter) {
+        return Arrays.asList(getString(key).split(splitter));
+    }
 
 	public static boolean getBoolean(String key) {
 		return p.getProperty(key).toLowerCase().equals("true") ? true : false;
