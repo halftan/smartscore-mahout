@@ -31,8 +31,10 @@ public abstract class BaseDAOImpl implements IBasicDAO {
 	@Override
 	public void close() {
 		try {
-			conn.close();
-			connectionClosed = true;
+            if (!connectionClosed) {
+                conn.close();
+                connectionClosed = true;
+            }
 		} catch (SQLException e) {
 			LOGGER.warn("Database error occurs when release a connection.");
 			LOGGER.warn(e.toString());

@@ -80,14 +80,15 @@ public class TaskOption {
         TaskOption to = null;
         try {
             to = mapper.readValue(message, TaskOption.class);
+            if (!validateTaskType(to) || !validateModelType(to)) {
+                return null;
+            }
+            return to;
         } catch (IOException e) {
             Log.error("Parse message error.");
             Log.error("Message: {}", message);
-        }
-        if (!validateTaskType(to) || !validateModelType(to)) {
             return null;
         }
-        return to;
 	}
 
     public String getTaskType() {
@@ -110,9 +111,9 @@ public class TaskOption {
         return output;
     }
 
-    public String getParams() {
-        return params;
-    }
+    public String getParams() { return params; }
+
+    public String getReturnKey() { return returnKey; }
 
     public int getTaskId() {
         return taskId;
@@ -124,6 +125,7 @@ public class TaskOption {
     public String trainInput;
     public String output;
     public String params;
+    public String returnKey;
     public int taskId;
 
     public String toString() {

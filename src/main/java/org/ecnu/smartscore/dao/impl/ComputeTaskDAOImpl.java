@@ -31,8 +31,7 @@ public class ComputeTaskDAOImpl extends BaseDAOImpl implements IComputeTaskDAO {
 	public ComputeTask getComputeTaskByTaskId(int taskId) {
 		ComputeTask resultTask = null;
 
-		String query = "SELECT * FROM `task` WHERE `task`.`id` = ? " +
-                "AND `state` = " + String.valueOf(STATE_WAITING);
+		String query = "SELECT * FROM `tasks` WHERE `tasks`.`id` = ? ";
 		try {
 			PreparedStatement stmt = conn.prepareStatement(query);
 			stmt.setInt(1, taskId);
@@ -59,23 +58,23 @@ public class ComputeTaskDAOImpl extends BaseDAOImpl implements IComputeTaskDAO {
 	}
 
 	@Override
-	public void updateComputeTaskStateByTaskId(int taskId, short state) {
+	public void updateComputeTaskStatusByTaskId(int taskId, short status) {
 		String query = null;
-        switch (state) {
+        switch (status) {
             case STATE_FINISHED:
-                query = "UPDATE `task` SET `state` = ?, `complete_at` = CURRENT_TIMESTAMP() WHERE `id` = ?";
+                query = "UPDATE `tasks` SET `status` = ?, `updated_at` = CURRENT_TIMESTAMP() WHERE `id` = ?";
                 break;
             case STATE_RUNNING:
-                query = "UPDATE `task` SET `state` = ?, `confirm_at` = CURRENT_TIMESTAMP() WHERE `id` = ?";
+                query = "UPDATE `tasks` SET `status` = ?, `updated_at` = CURRENT_TIMESTAMP() WHERE `id` = ?";
                 break;
             default:
-                query = "UPDATE `tasks` SET `state` = ? WHERE `id` = ?";
+                query = "UPDATE `tasks` SET `status` = ?, `updated_at` = CURRENT_TIMESTAMP() WHERE `id` = ?";
                 break;
         }
 
 		try {
 			PreparedStatement stmt = conn.prepareStatement(query);
-			stmt.setShort(1, state);
+			stmt.setShort(1, status);
 			stmt.setInt(2, taskId);
 			stmt.execute();
 		} catch (SQLException e) {

@@ -3,10 +3,10 @@ package org.ecnu.smartscore.task;
 import org.ecnu.smartscore.configs.ServerConfig;
 import org.ecnu.smartscore.dao.DAOFactory;
 import org.ecnu.smartscore.dao.IComputeTaskDAO;
-import org.ecnu.smartscore.utils.FilePath;
 import org.ecnu.smartscore.utils.ZipCompress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import redis.clients.jedis.Jedis;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -29,6 +29,7 @@ public class TaskItem implements Runnable {
 
 	@Override
 	public void run() {
+        boolean hasError = true;
 
         this.composeCommand();
 
@@ -36,25 +37,27 @@ public class TaskItem implements Runnable {
             IComputeTaskDAO dao = null;
             try {
                 dao = DAOFactory.getComputeTaskDAOInstance();
-                dao.updateComputeTaskStateByTaskId(option.getTaskId(),
+                dao.updateComputeTaskStatusByTaskId(option.getTaskId(),
                         IComputeTaskDAO.STATE_RUNNING);
+                hasError = this.invokeRunner();
+                dao = DAOFactory.getComputeTaskDAOInstance();
+                if (hasError) {
+                    dao.updateComputeTaskStatusByTaskId(option.getTaskId(),
+                            IComputeTaskDAO.STATE_ERROR);
+                } else {
+                    dao.updateComputeTaskStatusByTaskId(option.getTaskId(),
+                            IComputeTaskDAO.STATE_FINISHED);
+                }
                 dao.close();
                 dao = null;
-                this.invokeRunner();
             } catch (SQLException e) {
-                LOGGER.error("[task] ; Update database error ; taskid ; {} ; not run", option.getTaskId());
+                LOGGER.error("[task] ; Update database error ; taskid ; {}", option.getTaskId());
+            } finally {
+                if (dao != null) {
+                    dao.close();
+                    dao = null;
+                }
             }
-        }
-
-        IComputeTaskDAO dao = null;
-        try {
-            dao = DAOFactory.getComputeTaskDAOInstance();
-            dao.updateComputeTaskStateByTaskId(option.getTaskId(),
-                    IComputeTaskDAO.STATE_FINISHED);
-            dao.close();
-            dao = null;
-        } catch (SQLException e) {
-            LOGGER.error("[task] ; Update database error ; taskid ; {} ; finished", option.getTaskId());
         }
 
 
@@ -101,7 +104,7 @@ public class TaskItem implements Runnable {
         LOGGER.debug("[task] ; running command ; {} ; {}", option.getTaskId(), commandTmpl);
     }
 
-    private void invokeRunner() {
+    private boolean invokeRunner() {
         try {
             Process p = Runtime.getRuntime().exec(this.command.split(" "));
             p.waitFor();
@@ -114,15 +117,29 @@ public class TaskItem implements Runnable {
                 hasErrorOutput = true;
                 LOGGER.error("[task] ; [{}] ; {}", option.getTaskId(), line);
             }
+            Jedis redis = null;
+            if (option.getReturnKey() != null) {
+                redis = new Jedis(ServerConfig.getString("sc.redis.host"),
+                        ServerConfig.getInteger("sc.redis.port"));
+            }
             if (hasErrorOutput) {
+                if (redis != null) {
+                    redis.set(option.getReturnKey(), String.valueOf(1));
+                }
                 LOGGER.error("[task] ; [{}] ; Task went south.", option.getTaskId());
             } else {
+                if (redis != null) {
+                    redis.set(option.getReturnKey(), String.valueOf(0));
+                }
                 LOGGER.info("[task] ; [{}] ; Task completed.", option.getTaskId());
             }
+            return hasErrorOutput;
         } catch (IOException e) {
             LOGGER.error("[task] ; Cannot execute command ; {}", this.command);
+            return false;
         } catch (InterruptedException e) {
             LOGGER.error("[task] ; [{}] ; Task interrupted.", option.getTaskId());
+            return false;
         }
 
     }
@@ -137,8 +154,8 @@ public class TaskItem implements Runnable {
 					String.class);
 
 			IComputeTaskDAO dao = DAOFactory.getComputeTaskDAOInstance();
-			dao.updateComputeTaskStateByTaskId(option.getTaskId(),
-					IComputeTaskDAO.STATE_RUNNING);
+			dao.updateComputeTaskStatusByTaskId(option.getTaskId(),
+                    IComputeTaskDAO.STATE_RUNNING);
 			dao.close();
 			dao = null;
 
@@ -163,9 +180,9 @@ public class TaskItem implements Runnable {
 			}
 
 			dao = DAOFactory.getComputeTaskDAOInstance();
-			dao.updateComputeTaskStateByTaskId(option.getTaskId(),
-					finished ? IComputeTaskDAO.STATE_FINISHED
-							: IComputeTaskDAO.STATE_ERROR);
+			dao.updateComputeTaskStatusByTaskId(option.getTaskId(),
+                    finished ? IComputeTaskDAO.STATE_FINISHED
+                            : IComputeTaskDAO.STATE_ERROR);
 			dao.close();
 			dao = null;
 
