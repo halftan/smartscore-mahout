@@ -1,5 +1,7 @@
 package org.ecnu.smartscore.redis;
 
+import org.ecnu.smartscore.dao.DAOFactory;
+import org.ecnu.smartscore.dao.IComputeTaskDAO;
 import org.ecnu.smartscore.task.TaskItem;
 import org.ecnu.smartscore.task.TaskOption;
 import org.ecnu.smartscore.task.TaskPool;
@@ -7,6 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import redis.clients.jedis.JedisPubSub;
+
+import java.sql.SQLException;
 
 public class RedisListener extends JedisPubSub {
 
@@ -26,8 +30,19 @@ public class RedisListener extends JedisPubSub {
 		if (option == null) {
 			LOGGER.warn("[task] ; Unacceptable message ; {}", message);
 		} else {
-			TaskPool.getInstance().put(new TaskItem(option));
-		}
+            IComputeTaskDAO dao = null;
+            try {
+                dao = DAOFactory.getComputeTaskDAOInstance();
+                dao.updateComputeTaskStatusByTaskId(option.getTaskId(),
+                        IComputeTaskDAO.STATE_QUEUEING);
+                TaskPool.getInstance().put(new TaskItem(option));
+            } catch (SQLException e) {
+                LOGGER.error("[task] ; Cannot add task {} to queue", option.getTaskId());
+            } finally {
+                dao.close();
+                dao = null;
+            }
+        }
 	}
 
 	@Override

@@ -40,7 +40,6 @@ public class TaskItem implements Runnable {
                 dao.updateComputeTaskStatusByTaskId(option.getTaskId(),
                         IComputeTaskDAO.STATE_RUNNING);
                 hasError = this.invokeRunner();
-                dao = DAOFactory.getComputeTaskDAOInstance();
                 if (hasError) {
                     dao.updateComputeTaskStatusByTaskId(option.getTaskId(),
                             IComputeTaskDAO.STATE_ERROR);
