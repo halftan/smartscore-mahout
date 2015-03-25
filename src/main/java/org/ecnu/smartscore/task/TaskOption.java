@@ -32,9 +32,12 @@ public class TaskOption {
 
     public static void main(String[] args) {
         ServerConfig.load();
-        Process p;
+        ProcessBuilder pb;
         try {
-            p = Runtime.getRuntime().exec("ls");
+            pb = new ProcessBuilder("ls");
+            Map<?,?> env = pb.environment();
+            Process p = pb.start();
+            p.waitFor();
             BufferedReader reader = new BufferedReader(
                     new InputStreamReader(p.getInputStream())
             );
@@ -43,6 +46,8 @@ public class TaskOption {
                 System.out.println(line);
             }
         } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
 //        String message = "{\"taskType\":\"classification\", \"modelType\":\"ME\"}";

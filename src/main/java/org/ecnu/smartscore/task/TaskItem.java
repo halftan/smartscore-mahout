@@ -3,16 +3,19 @@ package org.ecnu.smartscore.task;
 import org.ecnu.smartscore.configs.ServerConfig;
 import org.ecnu.smartscore.dao.DAOFactory;
 import org.ecnu.smartscore.dao.IComputeTaskDAO;
+import org.ecnu.smartscore.utils.ArrayUtils;
 import org.ecnu.smartscore.utils.ZipCompress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.Method;
 import java.sql.SQLException;
+import java.util.Map;
 
 public class TaskItem implements Runnable {
 
@@ -47,10 +50,12 @@ public class TaskItem implements Runnable {
                     dao.updateComputeTaskStatusByTaskId(option.getTaskId(),
                             IComputeTaskDAO.STATE_FINISHED);
                 }
-                dao.close();
-                dao = null;
             } catch (SQLException e) {
-                LOGGER.error("[task] ; Update database error ; taskid ; {}", option.getTaskId());
+                LOGGER.error("[task-{}] ; Update database error.", option.getTaskId());
+            } catch (Exception e) {
+                dao.updateComputeTaskStatusByTaskId(option.getTaskId(),
+                        IComputeTaskDAO.STATE_ERROR);
+                LOGGER.error("[task-{}] ; Unknown error.", option.getTaskId());
             } finally {
                 if (dao != null) {
                     dao.close();
@@ -103,39 +108,50 @@ public class TaskItem implements Runnable {
         LOGGER.debug("[task] ; running command ; {} ; {}", option.getTaskId(), commandTmpl);
     }
 
+    private Process getProcess() {
+        ProcessBuilder pb = new ProcessBuilder(ArrayUtils.concatenate(
+                new String[]{"bash", "-c"},
+                this.command.split(" "))
+        );
+        Map<String, String> env = pb.environment();
+        env.put("HADOOP_HOME", ServerConfig.getString("hadoop.home"));
+        env.put("HADOOP_CONF_DIR", ServerConfig.getString("hadoop.conf.dir"));
+        env.put("PATH", ServerConfig.getString("hadoop.bin") + File.pathSeparator + env.get("PATH"));
+        File errLog = new File(String.format("%s/task-%d-error.log",
+                ServerConfig.getString("sc.task.log_path"), option.getTaskId()));
+        File stdLog = new File(String.format("%s/task-%d-output.log",
+                ServerConfig.getString("sc.task.log_path"), option.getTaskId()));
+        pb.redirectError(errLog);
+        pb.redirectOutput(stdLog);
+        try {
+            Process p = pb.start();
+            return p;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     private boolean invokeRunner() {
         try {
-            Process p = Runtime.getRuntime().exec(this.command.split(" "));
-            p.waitFor();
-            BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(p.getErrorStream())
-            );
-            String line = null;
+            Process p = getProcess();
             boolean hasErrorOutput = false;
-            while ((line = reader.readLine()) != null) {
-                hasErrorOutput = true;
-                LOGGER.error("[task] ; [{}] ; {}", option.getTaskId(), line);
-            }
+            int returnVal = p.waitFor();
+            hasErrorOutput = returnVal != 0;
             Jedis redis = null;
             if (option.getReturnKey() != null) {
                 redis = new Jedis(ServerConfig.getString("sc.redis.host"),
                         ServerConfig.getInteger("sc.redis.port"));
             }
+            if (redis != null) {
+                redis.set(option.getReturnKey(), String.valueOf(returnVal));
+            }
             if (hasErrorOutput) {
-                if (redis != null) {
-                    redis.set(option.getReturnKey(), String.valueOf(1));
-                }
-                LOGGER.error("[task] ; [{}] ; Task went south.", option.getTaskId());
+                LOGGER.error("[task-{}] ; Task error with return value {}.", option.getTaskId(), returnVal);
             } else {
-                if (redis != null) {
-                    redis.set(option.getReturnKey(), String.valueOf(0));
-                }
-                LOGGER.info("[task] ; [{}] ; Task completed.", option.getTaskId());
+                LOGGER.info("[task-{}] ; Task completed.", option.getTaskId());
             }
             return hasErrorOutput;
-        } catch (IOException e) {
-            LOGGER.error("[task] ; Cannot execute command ; {}", this.command);
-            return false;
         } catch (InterruptedException e) {
             LOGGER.error("[task] ; [{}] ; Task interrupted.", option.getTaskId());
             return false;
@@ -143,53 +159,4 @@ public class TaskItem implements Runnable {
 
     }
 
-	private void invokeRunner(String taskName, String className, String inputPath,
-			String outputPath) {
-		try {
-			ClassLoader loader = this.getClass().getClassLoader();
-			Class<?> runner = loader
-					.loadClass("org.ecnu.smartscore." + taskName + ".runner." + className);
-			Method runMethod = runner.getMethod("run", String.class,
-					String.class);
-
-			IComputeTaskDAO dao = DAOFactory.getComputeTaskDAOInstance();
-			dao.updateComputeTaskStatusByTaskId(option.getTaskId(),
-                    IComputeTaskDAO.STATE_RUNNING);
-			dao.close();
-			dao = null;
-
-			LOGGER.info("Executing task...");
-
-			boolean finished = false;
-			try {
-				long startTime = System.currentTimeMillis();
-				runMethod.invoke(null, inputPath, outputPath);
-				long endTime = System.currentTimeMillis();
-				LOGGER.info("Task completed in {} ms.", endTime - startTime);
-
-				LOGGER.info("Compressing result...");
-				startTime = System.currentTimeMillis();
-				ZipCompress.compressDir(outputPath);
-				endTime = System.currentTimeMillis();
-				LOGGER.info("Result compressed in {} ms", endTime - startTime);
-
-				finished = true;
-			} catch (Exception e) {
-				LOGGER.error("Compute error in task runner", e);
-			}
-
-			dao = DAOFactory.getComputeTaskDAOInstance();
-			dao.updateComputeTaskStatusByTaskId(option.getTaskId(),
-                    finished ? IComputeTaskDAO.STATE_FINISHED
-                            : IComputeTaskDAO.STATE_ERROR);
-			dao.close();
-			dao = null;
-
-		} catch (ClassNotFoundException e) {
-			LOGGER.error("Required class org.ecnu.smartscore.runner."
-					+ className + " not loaded!");
-		} catch (Exception e) {
-			LOGGER.error("Unknwon error in task runner " + className, e);
-		}
-	}
 }
