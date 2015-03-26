@@ -27,4 +27,5 @@ public interface IComputeTaskDAO extends IBasicDAO {
 
 	void updateComputeTaskStatusByTaskId(int taskId, short state);
 
+	void updateFinishedTime(int taskId);
 }

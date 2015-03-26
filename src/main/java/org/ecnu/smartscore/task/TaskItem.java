@@ -49,12 +49,15 @@ public class TaskItem implements Runnable {
                 } else {
                     dao.updateComputeTaskStatusByTaskId(option.getTaskId(),
                             IComputeTaskDAO.STATE_FINISHED);
+                    dao.updateFinishedTime(option.getTaskId());
                 }
             } catch (SQLException e) {
                 LOGGER.error("[task-{}] ; Update database error.", option.getTaskId());
             } catch (Exception e) {
-                dao.updateComputeTaskStatusByTaskId(option.getTaskId(),
-                        IComputeTaskDAO.STATE_ERROR);
+                if (dao != null) {
+                    dao.updateComputeTaskStatusByTaskId(option.getTaskId(),
+                            IComputeTaskDAO.STATE_ERROR);
+                }
                 LOGGER.error("[task-{}] ; Unknown error.", option.getTaskId());
             } finally {
                 if (dao != null) {

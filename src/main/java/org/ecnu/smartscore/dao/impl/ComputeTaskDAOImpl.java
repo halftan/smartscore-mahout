@@ -86,4 +86,21 @@ public class ComputeTaskDAOImpl extends BaseDAOImpl implements IComputeTaskDAO {
 		}
 	}
 
+	@Override
+	public void updateFinishedTime(int taskId) {
+		String query = "UPDATE `tasks` SET `finished_at` = CURRENT_TIMESTAMP() WHERE `id` = ?";
+		try {
+			PreparedStatement stmt = conn.prepareStatement(query);
+			stmt.setInt(1, taskId);
+			stmt.execute();
+		} catch (SQLException e) {
+			LOGGER.error("An exception was caught in DAO.");
+			LOGGER.error(e.toString());
+			if (LOGGER.isDebugEnabled()) {
+				e.printStackTrace();
+			}
+		}
+
+	}
+
 }
