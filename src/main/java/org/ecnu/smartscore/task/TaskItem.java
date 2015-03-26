@@ -105,14 +105,11 @@ public class TaskItem implements Runnable {
         commandTmpl = commandTmpl.replaceAll("\\{outputPath\\}", option.getOutput());
 
         this.command = commandTmpl;
-        LOGGER.debug("[task] ; running command ; {} ; {}", option.getTaskId(), commandTmpl);
     }
 
     private Process getProcess() {
-        ProcessBuilder pb = new ProcessBuilder(ArrayUtils.concatenate(
-                new String[]{"bash", "-c"},
-                this.command.split(" "))
-        );
+        ProcessBuilder pb = new ProcessBuilder("bash", "-c", command);
+        LOGGER.debug("[task-{}] ; running command ; {}", option.getTaskId(), pb.command());
         Map<String, String> env = pb.environment();
         env.put("HADOOP_HOME", ServerConfig.getString("hadoop.home"));
         env.put("HADOOP_CONF_DIR", ServerConfig.getString("hadoop.conf.dir"));
