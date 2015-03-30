@@ -9,10 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.lang.reflect.Method;
 import java.sql.SQLException;
 import java.util.Map;
@@ -23,9 +20,12 @@ public class TaskItem implements Runnable {
 	private final static Logger LOGGER = LoggerFactory
 			.getLogger(TaskItem.class);
     private String command;
+    private Jedis redis = null;
 
 	public TaskItem(TaskOption option) {
 		this.option = option;
+        redis = new Jedis(ServerConfig.getString("sc.redis.host"),
+                ServerConfig.getInteger("sc.redis.port"));
 
 		LOGGER.info("Task created with options: {}", option);
 	}
@@ -58,7 +58,8 @@ public class TaskItem implements Runnable {
                     dao.updateComputeTaskStatusByTaskId(option.getTaskId(),
                             IComputeTaskDAO.STATE_ERROR);
                 }
-                LOGGER.error("[task-{}] ; Unknown error.", option.getTaskId());
+                LOGGER.error("[task-{}] ; Unknown error. {}", option.getTaskId(), e.getMessage());
+                LOGGER.error("[task-{}] ; Stacktrace ; {}", option.getTaskId(), e.getStackTrace());
             } finally {
                 if (dao != null) {
                     dao.close();
@@ -116,13 +117,10 @@ public class TaskItem implements Runnable {
         Map<String, String> env = pb.environment();
         env.put("HADOOP_HOME", ServerConfig.getString("hadoop.home"));
         env.put("HADOOP_CONF_DIR", ServerConfig.getString("hadoop.conf.dir"));
-        env.put("PATH", ServerConfig.getString("hadoop.bin") + File.pathSeparator + env.get("PATH"));
-        File errLog = new File(String.format("%s/task-%d-error.log",
-                ServerConfig.getString("sc.task.log_path"), option.getTaskId()));
-        File stdLog = new File(String.format("%s/task-%d-output.log",
-                ServerConfig.getString("sc.task.log_path"), option.getTaskId()));
-        pb.redirectError(errLog);
-        pb.redirectOutput(stdLog);
+        env.put("MAHOUT_BIN", ServerConfig.getString("mahout.bin"));
+        env.put("PATH", ServerConfig.getString("hadoop.bin") + File.pathSeparator +
+                ServerConfig.getString("mahout.bin") + File.pathSeparator + env.get("PATH"));
+        pb.redirectErrorStream(true);
         try {
             Process p = pb.start();
             return p;
@@ -132,18 +130,29 @@ public class TaskItem implements Runnable {
         }
     }
 
+    private void waitFor(Process proc) throws IOException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+        File stdLog = new File(String.format("%s/task-%d-output.log",
+                ServerConfig.getString("sc.task.log_path"), option.getTaskId()));
+        FileWriter writer = new FileWriter(stdLog);
+        String redisKey = String.format("task-%d-output", option.getTaskId());
+        String line;
+
+        redis.del(redisKey);
+        while ((line = reader.readLine()) != null) {
+            writer.write(line);
+            redis.rpush(redisKey, line.replaceAll("(\\r|\\n)", ""));
+        }
+    }
+
     private boolean invokeRunner() {
         try {
             Process p = getProcess();
             boolean hasErrorOutput = false;
-            int returnVal = p.waitFor();
+            waitFor(p);
+            int returnVal = p.exitValue();
             hasErrorOutput = returnVal != 0;
-            Jedis redis = null;
             if (option.getReturnKey() != null) {
-                redis = new Jedis(ServerConfig.getString("sc.redis.host"),
-                        ServerConfig.getInteger("sc.redis.port"));
-            }
-            if (redis != null) {
                 redis.set(option.getReturnKey(), String.valueOf(returnVal));
             }
             if (hasErrorOutput) {
@@ -152,8 +161,8 @@ public class TaskItem implements Runnable {
                 LOGGER.info("[task-{}] ; Task completed.", option.getTaskId());
             }
             return hasErrorOutput;
-        } catch (InterruptedException e) {
-            LOGGER.error("[task] ; [{}] ; Task interrupted.", option.getTaskId());
+        } catch (IOException e) {
+            LOGGER.error("[task] ; [{}] ; IOException in task ; {}", option.getTaskId(), e.getMessage());
             return false;
         }
 
