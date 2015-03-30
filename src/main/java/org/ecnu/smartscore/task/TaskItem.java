@@ -150,6 +150,7 @@ public class TaskItem implements Runnable {
             Process p = getProcess();
             boolean hasErrorOutput = false;
             waitFor(p);
+            p.waitFor();
             int returnVal = p.exitValue();
             hasErrorOutput = returnVal != 0;
             if (option.getReturnKey() != null) {
@@ -162,7 +163,10 @@ public class TaskItem implements Runnable {
             }
             return hasErrorOutput;
         } catch (IOException e) {
-            LOGGER.error("[task] ; [{}] ; IOException in task ; {}", option.getTaskId(), e.getMessage());
+            LOGGER.error("[task-{}] ; IOException in task ; {}", option.getTaskId(), e.getMessage());
+            return false;
+        } catch (InterruptedException e) {
+            LOGGER.error("[task-{}] ; Task interrupted ; {}", option.getTaskId(), e.getMessage());
             return false;
         }
 
